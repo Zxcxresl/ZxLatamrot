@@ -1,4 +1,4 @@
--- Zxhub -latamrot
+-- Zxhub -latamrot (VERSIÓN CORREGIDA)
 -- Hub by deep and Zxcx
 
 local Players = game:GetService("Players")
@@ -17,6 +17,7 @@ local SavedSpawnPoint = LocalPlayer.Character and LocalPlayer.Character:FindFirs
 LocalPlayer.CharacterAdded:Connect(function(character)
     character:WaitForChild("HumanoidRootPart")
     SavedSpawnPoint = character.HumanoidRootPart.Position
+    print("📍 Nuevo spawn point guardado: " .. tostring(SavedSpawnPoint))
 end)
 
 -- Configuración
@@ -82,7 +83,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
 -- Botones de control
-local MinimizeButton = Instance.new("TextButton")
+local MinimizeButton = Instance.new("TextButton") -- CAMBIADO A TEXTBUTTON
 MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
 MinimizeButton.Position = UDim2.new(1, -60, 0.5, -12.5)
@@ -135,8 +136,8 @@ Footer.Font = Enum.Font.Gotham
 Footer.TextXAlignment = Enum.TextXAlignment.Center
 Footer.Parent = MainFrame
 
--- Círculo flotante (minimizado)
-local FloatingCircle = Instance.new("Frame")
+-- Círculo flotante (minimizado) - CAMBIADO A TEXTBUTTON
+local FloatingCircle = Instance.new("TextButton") -- CAMBIADO DE FRAME A TEXTBUTTON
 FloatingCircle.Name = "FloatingCircle"
 FloatingCircle.Size = UDim2.new(0, 50, 0, 50)
 FloatingCircle.Position = UDim2.new(0, 20, 0, 20)
@@ -144,6 +145,7 @@ FloatingCircle.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 FloatingCircle.BorderColor3 = Color3.fromRGB(0, 0, 0)
 FloatingCircle.BorderSizePixel = 3
 FloatingCircle.Visible = false
+FloatingCircle.Text = "" -- Texto vacío porque usaremos un Label
 FloatingCircle.Parent = ScreenGui
 
 local CircleCorner = Instance.new("UICorner")
@@ -230,7 +232,7 @@ local HitboxButton = CreateOptionButton("Hitbox Bat v1", "Hitbox aumentada a 18 
 InstaStealButton.MouseButton1Click:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(SavedSpawnPoint)
-        print("Teletransportado al spawn point!")
+        print("✅ Teletransportado al spawn point!")
     end
 end)
 
@@ -426,7 +428,7 @@ HitboxButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Funciones de UI
+-- Funciones de UI (CORREGIDAS)
 MinimizeButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
     FloatingCircle.Visible = true
@@ -480,5 +482,6 @@ end)
 -- Parent final
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-print("Zxhub -latamrot cargado exitosamente!")
-print("Spawn point guardado: " .. tostring(SavedSpawnPoint))
+print("🎯 Zxhub -latamrot cargado exitosamente!")
+print("📍 Spawn point guardado: " .. tostring(SavedSpawnPoint))
+print("🖱️ Click en el círculo 'Z' para restaurar la UI")
