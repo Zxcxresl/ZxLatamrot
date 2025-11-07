@@ -1,4 +1,4 @@
--- Zxhub -latamrot (VERSIÓN CORREGIDA)
+-- Zxhub -latamrot (VERSIÓN MEJORADA)
 -- Hub by deep and Zxcx
 
 local Players = game:GetService("Players")
@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -27,7 +28,8 @@ local Config = {
     SpeedValue = 50,
     NoclipEnabled = false,
     PlatformEnabled = false,
-    HitboxEnabled = false
+    HitboxEnabled = false,
+    InstaAG = false
 }
 
 -- Variables
@@ -35,6 +37,8 @@ local PlatformPart = nil
 local NoclipConnection = nil
 local SpeedConnection = nil
 local HitboxConnection = nil
+local InstaAGConnection = nil
+local CollidedParts = {}
 
 -- Crear UI principal
 local ScreenGui = Instance.new("ScreenGui")
@@ -45,8 +49,8 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 -- Marco principal (rectangular alargado hacia abajo)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 350, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -175, 0.5, -200)
+MainFrame.Size = UDim2.new(0, 300, 0, 350) -- Más compacto
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
 MainFrame.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Rojo
 MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0) -- Borde negro
 MainFrame.BorderSizePixel = 3
@@ -83,7 +87,7 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
 -- Botones de control
-local MinimizeButton = Instance.new("TextButton") -- CAMBIADO A TEXTBUTTON
+local MinimizeButton = Instance.new("TextButton")
 MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
 MinimizeButton.Position = UDim2.new(1, -60, 0.5, -12.5)
@@ -120,7 +124,7 @@ OptionsFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 0, 0)
 OptionsFrame.Parent = MainFrame
 
 local OptionsLayout = Instance.new("UIListLayout")
-OptionsLayout.Padding = UDim.new(0, 10)
+OptionsLayout.Padding = UDim.new(0, 8)
 OptionsLayout.Parent = OptionsFrame
 
 -- Footer
@@ -136,8 +140,8 @@ Footer.Font = Enum.Font.Gotham
 Footer.TextXAlignment = Enum.TextXAlignment.Center
 Footer.Parent = MainFrame
 
--- Círculo flotante (minimizado) - CAMBIADO A TEXTBUTTON
-local FloatingCircle = Instance.new("TextButton") -- CAMBIADO DE FRAME A TEXTBUTTON
+-- Círculo flotante (minimizado)
+local FloatingCircle = Instance.new("TextButton")
 FloatingCircle.Name = "FloatingCircle"
 FloatingCircle.Size = UDim2.new(0, 50, 0, 50)
 FloatingCircle.Position = UDim2.new(0, 20, 0, 20)
@@ -145,7 +149,7 @@ FloatingCircle.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 FloatingCircle.BorderColor3 = Color3.fromRGB(0, 0, 0)
 FloatingCircle.BorderSizePixel = 3
 FloatingCircle.Visible = false
-FloatingCircle.Text = "" -- Texto vacío porque usaremos un Label
+FloatingCircle.Text = ""
 FloatingCircle.Parent = ScreenGui
 
 local CircleCorner = Instance.new("UICorner")
@@ -162,11 +166,11 @@ CircleText.TextSize = 18
 CircleText.Font = Enum.Font.GothamBold
 CircleText.Parent = FloatingCircle
 
--- Función para crear botones de opción
-local function CreateOptionButton(name, description)
+-- Función para crear botones de opción (SIN DESCRIPCIÓN)
+local function CreateOptionButton(name)
     local ButtonFrame = Instance.new("Frame")
     ButtonFrame.Name = name .. "Frame"
-    ButtonFrame.Size = UDim2.new(1, 0, 0, 60)
+    ButtonFrame.Size = UDim2.new(1, 0, 0, 40) -- Más compacto
     ButtonFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     ButtonFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ButtonFrame.BorderSizePixel = 2
@@ -177,38 +181,26 @@ local function CreateOptionButton(name, description)
     
     local OptionName = Instance.new("TextLabel")
     OptionName.Name = "OptionName"
-    OptionName.Size = UDim2.new(0.7, 0, 0, 25)
-    OptionName.Position = UDim2.new(0, 10, 0, 5)
+    OptionName.Size = UDim2.new(0.6, 0, 1, 0)
+    OptionName.Position = UDim2.new(0, 10, 0, 0)
     OptionName.BackgroundTransparency = 1
     OptionName.Text = name
     OptionName.TextColor3 = Color3.fromRGB(255, 255, 255)
-    OptionName.TextSize = 16
+    OptionName.TextSize = 14
     OptionName.Font = Enum.Font.GothamBold
     OptionName.TextXAlignment = Enum.TextXAlignment.Left
     OptionName.Parent = ButtonFrame
     
-    local OptionDesc = Instance.new("TextLabel")
-    OptionDesc.Name = "OptionDesc"
-    OptionDesc.Size = UDim2.new(0.7, 0, 0, 20)
-    OptionDesc.Position = UDim2.new(0, 10, 0, 30)
-    OptionDesc.BackgroundTransparency = 1
-    OptionDesc.Text = description
-    OptionDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
-    OptionDesc.TextSize = 12
-    OptionDesc.Font = Enum.Font.Gotham
-    OptionDesc.TextXAlignment = Enum.TextXAlignment.Left
-    OptionDesc.Parent = ButtonFrame
-    
     local ToggleButton = Instance.new("TextButton")
     ToggleButton.Name = "ToggleButton"
-    ToggleButton.Size = UDim2.new(0, 80, 0, 30)
-    ToggleButton.Position = UDim2.new(1, -90, 0.5, -15)
+    ToggleButton.Size = UDim2.new(0, 80, 0, 25)
+    ToggleButton.Position = UDim2.new(1, -90, 0.5, -12.5)
     ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
     ToggleButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ToggleButton.BorderSizePixel = 2
     ToggleButton.Text = "OFF"
     ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.TextSize = 14
+    ToggleButton.TextSize = 12
     ToggleButton.Font = Enum.Font.GothamBold
     ToggleButton.Parent = ButtonFrame
     
@@ -220,12 +212,13 @@ local function CreateOptionButton(name, description)
     return ToggleButton
 end
 
--- Crear opciones
-local InstaStealButton = CreateOptionButton("Insta Steal v1", "Teletransporta al spawn point guardado")
-local SpeedButton = CreateOptionButton("Speed", "Movimiento rápido usando CFrame")
-local NoclipButton = CreateOptionButton("Noclip", "Atraviesa paredes con tween")
-local PlatformButton = CreateOptionButton("Platform v1", "Plataforma que sigue tus pies")
-local HitboxButton = CreateOptionButton("Hitbox Bat v1", "Hitbox aumentada a 18 con tool")
+-- Crear opciones (SOLO NOMBRE)
+local InstaStealButton = CreateOptionButton("Insta Steal v1")
+local SpeedButton = CreateOptionButton("Speed")
+local NoclipButton = CreateOptionButton("Noclip")
+local PlatformButton = CreateOptionButton("Platform v1")
+local HitboxButton = CreateOptionButton("Hitbox Bat v1")
+local InstaAGButton = CreateOptionButton("Insta AG") -- NUEVA OPCIÓN
 
 -- Funcionalidades
 -- Insta Steal v1
@@ -236,7 +229,7 @@ InstaStealButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Speed (usando CFrame)
+-- Speed (usando CFrame CORREGIDO)
 SpeedButton.MouseButton1Click:Connect(function()
     Config.SpeedEnabled = not Config.SpeedEnabled
     
@@ -249,6 +242,7 @@ SpeedButton.MouseButton1Click:Connect(function()
                 local root = LocalPlayer.Character.HumanoidRootPart
                 local moveDirection = Vector3.new(0, 0, 0)
                 
+                -- Usar InputBegan/Ended para mejor control
                 if UserInputService:IsKeyDown(Enum.KeyCode.W) then
                     moveDirection = moveDirection + Camera.CFrame.LookVector
                 end
@@ -262,8 +256,12 @@ SpeedButton.MouseButton1Click:Connect(function()
                     moveDirection = moveDirection + Camera.CFrame.RightVector
                 end
                 
-                moveDirection = moveDirection.Unit * Config.SpeedValue * delta
-                root.CFrame = root.CFrame + moveDirection
+                if moveDirection.Magnitude > 0 then
+                    moveDirection = moveDirection.Unit * Config.SpeedValue * delta * 50
+                    -- Mover manteniendo la posición Y
+                    local newPos = root.Position + Vector3.new(moveDirection.X, 0, moveDirection.Z)
+                    root.CFrame = CFrame.new(newPos)
+                end
             end
         end)
     else
@@ -288,19 +286,7 @@ NoclipButton.MouseButton1Click:Connect(function()
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 local root = LocalPlayer.Character.HumanoidRootPart
                 
-                -- Detectar colisión y hacer tween hacia adelante
-                local ray = Ray.new(root.Position, root.CFrame.LookVector * 5)
-                local hit = Workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character})
-                
-                if hit then
-                    -- Tween a través de la pared
-                    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Linear)
-                    local goal = {CFrame = root.CFrame + root.CFrame.LookVector * 10}
-                    local tween = TweenService:Create(root, tweenInfo, goal)
-                    tween:Play()
-                end
-                
-                -- Hacer noclip tradicional también
+                -- Hacer noclip tradicional
                 for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
@@ -318,7 +304,7 @@ NoclipButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Platform v1
+-- Platform v1 MEJORADA (con elevación y colisión inteligente)
 PlatformButton.MouseButton1Click:Connect(function()
     Config.PlatformEnabled = not Config.PlatformEnabled
     
@@ -329,18 +315,62 @@ PlatformButton.MouseButton1Click:Connect(function()
         -- Crear plataforma
         PlatformPart = Instance.new("Part")
         PlatformPart.Name = "PlayerPlatform"
-        PlatformPart.Size = Vector3.new(10, 1, 10)
+        PlatformPart.Size = Vector3.new(8, 1, 8)
         PlatformPart.Anchored = true
         PlatformPart.CanCollide = true
         PlatformPart.Material = Enum.Material.Neon
         PlatformPart.BrickColor = BrickColor.new("Bright red")
+        PlatformPart.Transparency = 0.3
         PlatformPart.Parent = Workspace
         
-        -- Hacer que siga al jugador
+        local elevation = 0
+        local elevationSpeed = 0.5
+        local maxElevation = 20
+        
+        -- Hacer que siga al jugador y se eleve
         RunService.Heartbeat:Connect(function()
             if PlatformPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 local root = LocalPlayer.Character.HumanoidRootPart
-                PlatformPart.Position = Vector3.new(root.Position.X, root.Position.Y - 5, root.Position.Z)
+                
+                -- Elevación gradual
+                elevation = math.min(elevation + elevationSpeed * 0.1, maxElevation)
+                
+                -- Verificar colisiones
+                local platformPos = Vector3.new(root.Position.X, root.Position.Y - 3 - elevation, root.Position.Z)
+                
+                -- Raycast para detectar obstáculos
+                local rayOrigin = root.Position
+                local rayDirection = (platformPos - rayOrigin).Unit * (platformPos - rayOrigin).Magnitude
+                local raycastParams = RaycastParams.new()
+                raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, PlatformPart}
+                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                
+                local hitResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                
+                if hitResult then
+                    local hitPart = hitResult.Instance
+                    -- Hacer temporalmente transparente y no colisionable la parte golpeada
+                    if not CollidedParts[hitPart] then
+                        CollidedParts[hitPart] = {
+                            OriginalTransparency = hitPart.Transparency,
+                            OriginalCanCollide = hitPart.CanCollide
+                        }
+                        
+                        hitPart.Transparency = 0.8
+                        hitPart.CanCollide = false
+                        
+                        -- Reactivar después de 2 segundos
+                        task.delay(2, function()
+                            if hitPart and CollidedParts[hitPart] then
+                                hitPart.Transparency = CollidedParts[hitPart].OriginalTransparency
+                                hitPart.CanCollide = CollidedParts[hitPart].OriginalCanCollide
+                                CollidedParts[hitPart] = nil
+                            end
+                        end)
+                    end
+                end
+                
+                PlatformPart.Position = platformPos
             end
         end)
     else
@@ -350,6 +380,15 @@ PlatformButton.MouseButton1Click:Connect(function()
             PlatformPart:Destroy()
             PlatformPart = nil
         end
+        
+        -- Reactivar todas las partes afectadas
+        for part, originalProps in pairs(CollidedParts) do
+            if part then
+                part.Transparency = originalProps.OriginalTransparency
+                part.CanCollide = originalProps.OriginalCanCollide
+            end
+        end
+        CollidedParts = {}
     end
 end)
 
@@ -364,7 +403,6 @@ HitboxButton.MouseButton1Click:Connect(function()
         local function expandHitbox(character)
             if character and character:FindFirstChild("HumanoidRootPart") then
                 local root = character.HumanoidRootPart
-                -- Crear o actualizar hitbox
                 local hitbox = root:FindFirstChild("ExpandedHitbox")
                 if not hitbox then
                     hitbox = Instance.new("BillboardGui")
@@ -390,14 +428,12 @@ HitboxButton.MouseButton1Click:Connect(function()
         
         HitboxConnection = RunService.Heartbeat:Connect(function()
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool") then
-                -- Aplicar a todos los jugadores
                 for _, player in pairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer and player.Character then
                         expandHitbox(player.Character)
                     end
                 end
             else
-                -- Remover hitboxes si no tiene tool
                 for _, player in pairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                         local hitbox = player.Character.HumanoidRootPart:FindFirstChild("ExpandedHitbox")
@@ -416,7 +452,6 @@ HitboxButton.MouseButton1Click:Connect(function()
             HitboxConnection = nil
         end
         
-        -- Remover todas las hitboxes
         for _, player in pairs(Players:GetPlayers()) do
             if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 local hitbox = player.Character.HumanoidRootPart:FindFirstChild("ExpandedHitbox")
@@ -428,7 +463,49 @@ HitboxButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Funciones de UI (CORREGIDAS)
+-- Insta AG (NUEVA FUNCIÓN)
+InstaAGButton.MouseButton1Click:Connect(function()
+    Config.InstaAG = not Config.InstaAG
+    
+    if Config.InstaAG then
+        InstaAGButton.Text = "ON"
+        InstaAGButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        
+        local function modifyProximityPrompt(prompt)
+            if prompt:IsA("ProximityPrompt") then
+                -- Quitar cooldowns
+                prompt.HoldDuration = 0
+                prompt.Cooldown = 0
+                prompt.Enabled = true
+                
+                -- Aumentar rango
+                prompt.MaxActivationDistance = 50
+            end
+        end
+        
+        -- Modificar prompts existentes
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            modifyProximityPrompt(obj)
+        end
+        
+        -- Modificar nuevos prompts
+        InstaAGConnection = Workspace.DescendantAdded:Connect(function(obj)
+            modifyProximityPrompt(obj)
+        end)
+        
+        print("✅ Insta AG activado - Sin cooldowns en ProximityPrompts")
+    else
+        InstaAGButton.Text = "OFF"
+        InstaAGButton.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        if InstaAGConnection then
+            InstaAGConnection:Disconnect()
+            InstaAGConnection = nil
+        end
+        print("❌ Insta AG desactivado")
+    end
+end)
+
+-- Funciones de UI
 MinimizeButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
     FloatingCircle.Visible = true
@@ -482,6 +559,6 @@ end)
 -- Parent final
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-print("🎯 Zxhub -latamrot cargado exitosamente!")
+print("🎯 Zxhub -latamrot MEJORADO cargado!")
 print("📍 Spawn point guardado: " .. tostring(SavedSpawnPoint))
-print("🖱️ Click en el círculo 'Z' para restaurar la UI")
+print("🆕 Nueva función: Insta AG - Sin cooldowns en ProximityPrompts")
